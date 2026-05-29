@@ -7,16 +7,18 @@ const sendBtn = document.getElementById('send-btn');
 const onlineCountEl = document.getElementById('online-count');
 const typingIndicator = document.getElementById('typing-indicator');
 
-// ===== Socket.IO 连接 =====
-const socket = io();
+// ===== 配置 =====
+const API_URL = '/api/messages';
+const POLL_INTERVAL = 2000; // 2秒轮询一次
+const userId = 'u_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+let latestMessageId = null;
 
-// ===== 本地存储昵称 =====
+// ===== 本地存储 =====
 const savedNickname = localStorage.getItem('msgboard-nickname');
 const savedColor = localStorage.getItem('msgboard-color');
 if (savedNickname) nicknameInput.value = savedNickname;
 if (savedColor) colorPicker.value = savedColor;
 
-// 保存昵称
 nicknameInput.addEventListener('change', () => {
   localStorage.setItem('msgboard-nickname', nicknameInput.value.trim());
 });
@@ -30,11 +32,9 @@ function formatTime(isoString) {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
 
-  // 同一天只显示时间
   if (d.toDateString() === now.toDateString()) {
     return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
-  // 否则显示月日+时间
   return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
@@ -43,7 +43,6 @@ function getAvatarLetter(nickname) {
 }
 
 function getContrastColor(hex) {
-  // 计算亮度，返回深色或浅色文字
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
@@ -51,22 +50,31 @@ function getContrastColor(hex) {
   return brightness > 150 ? '#1a1a2e' : '#ffffff';
 }
 
-// ===== 渲染 =====
-function addSystemMessage(text) {
-  const el = document.createElement('div');
-  el.className = 'system-msg';
-  el.textContent = text;
-
-  // 移除空状态提示
-  const emptyHint = messageList.querySelector('.empty-hint');
-  if (emptyHint) emptyHint.remove();
-
-  messageList.appendChild(el);
-  scrollToBottom();
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-function addMessage(msg) {
-  // 移除空状态提示
+// ===== 渲染 =====
+const renderedMessageIds = new Set();
+const MAX_RENDERED = 300;
+
+function addMessage(msg, prepend = false) {
+  if (renderedMessageIds.has(msg.id)) return;
+  renderedMessageIds.add(msg.id);
+
+  // 清理旧消息 DOM（防止内存过大）
+  if (renderedMessageIds.size > MAX_RENDERED) {
+    const oldItems = messageList.querySelectorAll('.message-item');
+    if (oldItems.length > MAX_RENDERED) {
+      const toRemove = oldItems.length - MAX_RENDERED;
+      for (let i = 0; i < toRemove; i++) {
+        oldItems[i].remove();
+      }
+    }
+  }
+
   const emptyHint = messageList.querySelector('.empty-hint');
   if (emptyHint) emptyHint.remove();
 
@@ -90,13 +98,10 @@ function addMessage(msg) {
   `;
 
   messageList.appendChild(el);
-  scrollToBottom();
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+function updateOnlineCount(count) {
+  onlineCountEl.textContent = count;
 }
 
 function scrollToBottom() {
@@ -105,29 +110,85 @@ function scrollToBottom() {
   });
 }
 
+// ===== 消息加载 =====
+async function loadHistory() {
+  try {
+    const res = await fetch(`${API_URL}?userId=${userId}`);
+    const data = await res.json();
+    if (data.messages && data.messages.length > 0) {
+      const emptyHint = messageList.querySelector('.empty-hint');
+      if (emptyHint) emptyHint.remove();
+    }
+    data.messages.forEach(msg => addMessage(msg));
+    if (data.latest) latestMessageId = data.latest;
+    updateOnlineCount(data.online || 0);
+    scrollToBottom();
+  } catch (err) {
+    console.log('加载历史消息失败，稍后重试');
+  }
+}
+
+async function pollMessages() {
+  try {
+    const params = new URLSearchParams({ userId });
+    if (latestMessageId) params.set('since', latestMessageId);
+
+    const res = await fetch(`${API_URL}?${params}`);
+    const data = await res.json();
+
+    if (data.messages && data.messages.length > 0) {
+      const wasAtBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 80;
+      data.messages.forEach(msg => addMessage(msg));
+      if (data.latest) latestMessageId = data.latest;
+      if (wasAtBottom) scrollToBottom();
+    }
+    updateOnlineCount(data.online || 0);
+  } catch (err) {
+    // 静默重试
+  }
+}
+
 // ===== 发送消息 =====
-function sendMessage() {
+async function sendMessage() {
   const nickname = nicknameInput.value.trim();
   const content = messageInput.value.trim();
   if (!content) return;
 
   // 保存偏好
-  if (nickname) {
-    localStorage.setItem('msgboard-nickname', nickname);
-  }
+  if (nickname) localStorage.setItem('msgboard-nickname', nickname);
   localStorage.setItem('msgboard-color', colorPicker.value);
 
-  socket.emit('send-message', {
-    nickname: nickname || '匿名',
-    content: content,
-    color: colorPicker.value
-  });
+  // 禁用按钮防止重复发送
+  sendBtn.disabled = true;
+  messageInput.disabled = true;
 
-  messageInput.value = '';
-  messageInput.focus();
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nickname: nickname || '匿名',
+        content: content,
+        color: colorPicker.value,
+        userId: userId
+      })
+    });
 
-  // 停止输入状态
-  socket.emit('stop-typing');
+    const data = await res.json();
+    if (data.success) {
+      addMessage(data.message);
+      if (data.message) latestMessageId = data.message.id;
+      updateOnlineCount(data.online || 0);
+      scrollToBottom();
+      messageInput.value = '';
+    }
+  } catch (err) {
+    alert('发送失败，请检查网络后重试');
+  } finally {
+    sendBtn.disabled = false;
+    messageInput.disabled = false;
+    messageInput.focus();
+  }
 }
 
 sendBtn.addEventListener('click', sendMessage);
@@ -139,47 +200,10 @@ messageInput.addEventListener('keydown', (e) => {
   }
 });
 
-// ===== 输入状态提示 =====
-let typingTimer = null;
-messageInput.addEventListener('input', () => {
-  if (!typingTimer) {
-    socket.emit('typing', nicknameInput.value.trim());
-  }
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => {
-    socket.emit('stop-typing');
-    typingTimer = null;
-  }, 1000);
-});
+// ===== 定期轮询 =====
+loadHistory();
+setInterval(pollMessages, POLL_INTERVAL);
 
-// ===== 接收事件 =====
-socket.on('history', (msgs) => {
-  if (msgs && msgs.length > 0) {
-    const emptyHint = messageList.querySelector('.empty-hint');
-    if (emptyHint) emptyHint.remove();
-    msgs.forEach(msg => addMessage(msg));
-  }
-});
+// 页面关闭时的心跳清理依赖服务端定期清理
 
-socket.on('new-message', (msg) => {
-  addMessage(msg);
-});
-
-socket.on('system-message', (data) => {
-  addSystemMessage(data.text);
-});
-
-socket.on('online-count', (count) => {
-  onlineCountEl.textContent = count;
-});
-
-socket.on('user-typing', (nickname) => {
-  typingIndicator.textContent = `${nickname} 正在输入...`;
-});
-
-socket.on('user-stop-typing', () => {
-  typingIndicator.textContent = '';
-});
-
-// ===== 自动聚焦 =====
 messageInput.focus();

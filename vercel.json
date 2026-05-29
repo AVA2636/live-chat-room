@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "experimentalServices": {
+    "live-chat-room": {
+      "type": "web",
+      "routePrefix": "/",
+      "buildCommand": "npm install",
+      "entrypoint": "server.js"
+    }
+  }
+}
