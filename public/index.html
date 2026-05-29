@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💬 多人实时留言板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 顶部栏 -->
+  <header>
+    <div class="header-left">
+      <h1>💬 实时留言板</h1>
+      <span class="online-badge" id="online-badge">
+        <span class="dot"></span>
+        在线: <strong id="online-count">0</strong> 人
+      </span>
+    </div>
+    <div class="header-right">
+      <span class="typing-indicator" id="typing-indicator"></span>
+    </div>
+  </header>
+
+  <!-- 消息列表 -->
+  <main id="message-list">
+    <div class="empty-hint">
+      <div class="empty-icon">📝</div>
+      <p>还没有消息，来说点什么吧！</p>
+    </div>
+  </main>
+
+  <!-- 底部输入区 -->
+  <footer>
+    <div class="input-row">
+      <div class="nickname-box">
+        <input
+          type="text"
+          id="nickname-input"
+          placeholder="昵称"
+          maxlength="20"
+          autocomplete="off"
+        />
+        <div class="color-picker-wrapper">
+          <input type="color" id="color-picker" value="#4a90d9" title="选择你的颜色" />
+        </div>
+      </div>
+      <div class="message-box">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="输入消息，按 Enter 发送..."
+          maxlength="500"
+          autocomplete="off"
+        />
+        <button id="send-btn" title="发送">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

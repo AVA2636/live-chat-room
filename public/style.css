@@ -1,0 +1,311 @@
+/* === 全局样式 === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f0f2f5;
+  --card-bg: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --accent: #4a90d9;
+  --header-bg: #1a1a2e;
+  --header-text: #ffffff;
+  --system-msg: #9ca3af;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* === 顶部栏 === */
+header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.online-badge {
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.typing-indicator {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-style: italic;
+}
+
+/* === 消息列表 === */
+main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+main::-webkit-scrollbar {
+  width: 5px;
+}
+main::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.empty-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  gap: 8px;
+}
+.empty-hint .empty-icon {
+  font-size: 3rem;
+}
+.empty-hint p {
+  font-size: 0.95rem;
+}
+
+/* === 系统消息 === */
+.system-msg {
+  text-align: center;
+  color: var(--system-msg);
+  font-size: 0.8rem;
+  padding: 6px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+/* === 消息气泡 === */
+.message-item {
+  display: flex;
+  gap: 10px;
+  animation: slideUp 0.3s ease;
+  max-width: 100%;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.message-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.message-nickname {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.message-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.message-content {
+  background: var(--card-bg);
+  padding: 10px 14px;
+  border-radius: 4px 16px 16px 16px;
+  box-shadow: var(--shadow);
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* === 底部输入区 === */
+footer {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nickname-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nickname-box input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  max-width: 200px;
+}
+.nickname-box input:focus {
+  border-color: var(--accent);
+}
+
+.color-picker-wrapper {
+  position: relative;
+}
+#color-picker {
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 2px;
+  background: #fff;
+}
+#color-picker:hover {
+  border-color: var(--accent);
+}
+
+.message-box {
+  display: flex;
+  gap: 8px;
+}
+
+.message-box input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.message-box input:focus {
+  border-color: var(--accent);
+}
+
+#send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.15s;
+  flex-shrink: 0;
+}
+#send-btn:hover {
+  background: #357abd;
+  transform: scale(1.05);
+}
+#send-btn:active {
+  transform: scale(0.95);
+}
+
+/* === 动画 === */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* === 响应式 === */
+@media (max-width: 500px) {
+  header {
+    padding: 10px 14px;
+  }
+  header h1 {
+    font-size: 1rem;
+  }
+  main {
+    padding: 10px 14px;
+  }
+  footer {
+    padding: 10px 14px;
+  }
+  .nickname-box input {
+    max-width: 140px;
+  }
+}
